@@ -1,0 +1,35 @@
+services:
+  api:
+    build: ./app
+    container_name: routing-api
+    ports:
+      - "8000:8000"
+    environment:
+      - OLLAMA_URL=http://ollama:11434/v1
+      - OLLAMA_MODEL=llama3.2
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+    depends_on:
+      - ollama
+      - mailhog
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
