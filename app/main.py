@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, EmailStr, Field
 from agent import run_routing_agent
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s", force=True)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
@@ -32,14 +32,17 @@ class RouteResponse(BaseModel):
     explanation: str = Field(..., description="Uzasadnienie")
 
 @app.post("/api/v1/route", response_model=RouteResponse, summary="Klasyfikacja i routing wiadomości")
-async def route_message(payload: RouteRequest):
+async def route_message(payload: RouteRequest) -> RouteResponse:
     """Przetwarza zgłoszenie użytkownika."""
     logger.info(f"Otrzymano wiadomość od: {payload.email}")
+    logger.info(f"Treść oryginalnej wiadomosci: {payload.message}")
     try:
         result = await run_routing_agent(
             sender_email=payload.email, 
             original_message=payload.message
         )
+        logger.info(f"Agent zadecydował o przekierowaniu do działu: {result['routed_to']}")
+        logger.info(f"Uzasadnienie: {result['explanation']}")
         return RouteResponse(
             status=result["status"],
             routed_to=result["routed_to"],
